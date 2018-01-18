@@ -1,0 +1,80 @@
+/*****************************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <err.h>
+#include "tools/vectors.h"
+#include "tools/color.h"
+#include "shapes/material.h"
+#include "ray/ray.h"
+#include "shapes/2Dshapes/plane.h"
+
+/*****************************************************************************/
+
+struct plane *new_plane(double xp, double yp, double zp, double xn, double yn,
+        double zn)
+{
+    struct plane *p = malloc(sizeof(struct plane));
+    p->point = new_vector(xp, yp, zp);
+    p->normal = new_vector(xn, yn, zn);
+    p->d = -(p->normal->x * p->point->x + p->normal->y * p->point->y +
+            p->normal->z * p->point->z);
+    return p;
+}
+
+struct plane *read_plane(FILE *f, unsigned *line, struct material *m)
+{
+    double xp, yp, zp, xn, yn, zn, r, g, b;
+
+    int cnt = fscanf(f, "%lg %lg %lg %lg %lg %lg %lg %lg %lg\n",
+		     &xp, &yp, &zp, &xn, &yn, &zn, &r, &g, &b);
+    if (cnt != 9)
+      errx(3, "%d found. Error while parsing input file: line %u\n", cnt, *line);
+
+    ++(*line);
+
+    m->diffuse->r = r;
+    m->diffuse->g = g;
+    m->diffuse->b = b;
+    read_material(f, line, m);
+    return new_plane(xp, yp, zp, xn, yn, zn);
+}
+
+double intersect_plane(void *plane, struct ray *r, int i)
+{
+    if (i < 0)
+        return 0;
+
+    struct plane *p = (struct plane *)plane;
+    double div = p->normal->x * r->dir->x +
+        p->normal->y * r->dir->y +
+        p->normal->z * r->dir->z;
+
+    if (div == 0 + i)
+        errx(3, "Divide by zero");
+    else
+        return -(p->normal->x * (r->pos->x - p->point->x) +
+                p->normal->y * (r->pos->y - p->point->y) +
+                p->normal->z * (r->pos->z - p->point->z) + p->d) / div;
+}
+
+struct vector *get_normal_plane(struct vector *inter_pos, void *plane, int i)
+{
+    if (i < 0)
+        return NULL;
+
+    struct plane *p = (struct plane *)plane;
+    if (inter_pos == NULL)
+        return NULL;
+    return normal_vector(p->normal);
+}
+
+void free_plane(void *plane)
+{
+    struct plane *p = (struct plane *)plane;
+    free_vector(p->point);
+    free_vector(p->normal);
+    free(p);
+}
+
+/*****************************************************************************/
