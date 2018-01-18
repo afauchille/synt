@@ -29,7 +29,7 @@ struct plane *read_plane(FILE *f, unsigned *line, struct material *m)
     int cnt = fscanf(f, "%lg %lg %lg %lg %lg %lg %lg %lg %lg\n",
 		     &xp, &yp, &zp, &xn, &yn, &zn, &r, &g, &b);
     if (cnt != 9)
-      errx(3, "%d found. Error while parsing input file: line %u\n", cnt, *line);
+      errx(3, "Error while parsing input file: line %u\n", *line);
 
     ++(*line);
 
