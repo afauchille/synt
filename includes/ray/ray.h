@@ -9,6 +9,9 @@
 #include "../lights/lights.h"
 #include "../shapes/shapes.h"
 
+/****************************** DEFINES ***********************************/
+#define pi 3.14159265
+
 /****************************** STRUCTURES ***********************************/
 
 //Structure of a ray.

@@ -104,7 +104,7 @@ void get_name(GtkWidget *pEntry)
 	memset(path, 0, 150);
 	for (unsigned i = 0; i < nb_frames; i++)
 	{
-	    sprintf(path, "%s/%d.png", dest, i);
+	    sprintf(path, "%s/%04d.png", dest, i);
 	    gdk_pixbuf_save(image_to_GdkPixbuf(animation_frames + i), path, "png", NULL, NULL);
 	}
     }

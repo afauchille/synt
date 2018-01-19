@@ -776,6 +776,10 @@ void raytrace_callback()
 	{
 	    animation_frames = malloc(sizeof(struct image) * nb_frames);
 	    struct image* dim = rp.img;
+	    double l_posz = 0;
+	    struct light_list *ll = rp.ll;
+	    if (ll)
+	      l_posz = ll->pos->z;
 	    for (unsigned i = 0; i < nb_frames; i++)
 	    {
 		animation_frames[i].pixels = calloc(dim->w * dim->h, sizeof(struct pixel));
@@ -783,7 +787,10 @@ void raytrace_callback()
 		animation_frames[i].h = dim->h;
 		rp.img = animation_frames + i;
 		raytrace(rp);
-		rp.c->pos = add_vector(rp.c->pos, mult_scalar(rp.c->dir, 2.0 / fps));
+		rp.c->pos = add_vector(rp.c->pos, mult_scalar(rp.c->dir, 0.4 / fps));
+		if (ll == NULL)
+		  return;
+		ll->pos->z = l_posz + 36 * sin(2 * pi * (double)i / (double)(fps * 51.) );
 	    }
 	}
 	path_changed = 0;

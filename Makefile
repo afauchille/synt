@@ -56,3 +56,6 @@ run:
 
 gdb:
 	@gdb $(BIN_DIR)/$(DBG)/$(OUT)
+
+video:
+	ffmpeg -f image2 -pattern_type glob -i 'anim/*.png' -r 40 demo.mp4
