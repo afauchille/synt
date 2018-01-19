@@ -234,9 +234,6 @@ struct color *reflect_ray(struct vector *dir, struct vector *pos,
 
     struct light_list *tmp_ll;
 
-    /*place = pos->y * img->w + pos->x;
-    curr_color = new_color(img->pixels[place].r,
-                        img->pixels[place].g, img->pixels[place].b);*/
     curr_color = new_color(inter_sl->m->diffuse->r,
                     inter_sl->m->diffuse->g, inter_sl->m->diffuse->b);
 
@@ -276,14 +273,6 @@ struct color *reflect_ray(struct vector *dir, struct vector *pos,
 
             tmp_ll = tmp_ll->next;
         }
-
-        /*place = inter_pos->y * img->w + inter_pos->x;
-        img->pixels[place].r = reflect_color->r;
-        img->pixels[place].g = reflect_color->g;
-        img->pixels[place].b = reflect_color->b;*/
-        /*new_inter_sl->m->diffuse->r = reflect_color->r;
-        new_inter_sl->m->diffuse->g = reflect_color->g;
-        new_inter_sl->m->diffuse->b = reflect_color->b;*/
 
         if (new_inter_sl->m->textured == 4)
         {
@@ -439,11 +428,6 @@ struct image* raytrace(struct raytracing_param rp)
     }
     printf("Time: %lld.%03lld s\n", delta_sec, delta_msec);
 
-    // Free and return
-    //free_shape_list(rp.sl);
-    //free_camera(rp.c);
-    //free_viewplane(rp.v);
-    //free_light_list(rp.ll);
     return rp.img;
 }
 
@@ -474,159 +458,6 @@ gboolean show_animation_pixbuf(gpointer data)
     curr_frame_id++;
     return TRUE;
 }
-
-/*struct net {
-    int socket, new_socket, go;
-    nfds_t nb_socket;
-    struct pollfd ufds[1000];
-};
-
-int curr_line;
-int curr_thread_server;
-
-void *thread_number_calculator_server(void *data)
-{
-    //static int curr_thread = 0;
-    curr_thread_server++;
-    return calculator(data, curr_thread);
-}
-
-void *receive_connection_from_client(void *data)
-{
-    struct sockaddr_storage client_addr;
-    socklen_t addr_size = sizeof client_addr;
-    struct net *network = (struct net *)data;
-    struct pollfd *fds = network->ufds;
-    
-    int sock = network->socket;
-    nfds_t nb_sock = network->nb_socket;
-    int new_sock;
-
-    while (1)
-    {
-        new_sock = accept(sock, (struct sockaddr *)&client_addr, &addr_size);
-
-        if (new_sock == -1)
-        {
-            perror("accept");
-            close(new_sock);
-            exit(EXIT_FAILURE);
-        }
-        else
-        {
-            nb_sock++;
-            fds[nb_sock - 1].fd = new_sock;
-            fds[nb_sock - 1].events = POLLIN;
-            fds[nb_sock - 1].revents = 0;
-            network->nb_socket++;
-            network->new_socket = new_sock;
-            network->go = 1;
-        }
-    }
-
-    pthread_exit(NULL);
-}
-
-void *receive_from_client(void *data)
-{
-    struct net *network = (struct net *)data;
-    struct pollfd *fds = network->ufds;
-    nfds_t nb_sock = 0;
-    int curr_sock;
-    char *lol[1000];
-    char buf[2048];
-    char *login = malloc(sizeof(char));
-    char *logins = malloc(sizeof(char));
-    FILE *f;
-    int received;
-    int polling;
-    char *welcome =
-        "\nWelcome. Please identify by typing \"IDENTIFY <login_x>\"\n\n";
-    char *connected =
-        "\nConnected. Type DISCONNECT to close the connection.\n\n";
-    char *denied = "\nACCESS DENIED\n";
-    char *message = malloc(sizeof(char) * 2048);
-    nfds_t pos;
-
-    while (1)
-    {
-        nb_sock = network->nb_socket;
-
-        if (network->go)
-        {
-            send(network->new_socket, welcome, strlen(welcome), 0);
-            network->go = 0;
-	    }
-
-        polling = poll(fds, nb_sock, 500);
-
-        if (polling == -1)
-            perror("poll");
-        else if (polling != 0)
-        {
-            for (nfds_t j = 0; j < nb_sock; j++)
-            {
-                if (fds[j].revents & POLLIN)
-                {
-                    received = recv(fds[j].fd, buf, 2048, 0);
-                    curr_sock = fds[j].fd;
-                    fds[j].revents = 0;
-                    break;
-                }
-            }
-
-            if (received != -1)
-            {
-                if (received == 0)
-                    fprintf(stderr, "socket %d hung up\n", curr_sock);
-                else
-                {
-                    if (strncmp("IDENTIFY", buf, 8) == 0)
-                    {
-                        memset(login, 0, 8);
-
-                        login = malloc(sizeof(char) * (strlen(buf) - 9));
-
-                        for (size_t i = 9; i < strlen(buf) - 1; i++)
-                            login[i - 9] = buf[i];
-                    }
-                    else
-                    {
-                        if (strlen(buf) != 0 && strlen(buf) <= 2048)
-                        {
-                            message = strcat(message, "<");
-                            message = strcat(message, lol[curr_sock - 4]);
-                            message = strcat(message, "> ");
-                            message = strcat(message, buf);
-                            message = strcat(message, "\n");
-
-                            for (nfds_t j = 0; j < nb_sock; j++)
-                            {
-                                if (fds[j].fd != curr_sock)
-                                    send(fds[j].fd, message, strlen(message),
-                                                                            0);
-                            }
-
-                            fprintf(stdout, "<%s> %s\n", lol[curr_sock - 4],
-                                                                        buf);
-                        }
-                        else if (strlen(buf) > 2048)
-                            send(curr_sock, "Your message is too long\n", 25,
-                                                                            0);
-                    }
-                    memset(message, 0, strlen(message));
-                    memset(buf, 0, strlen(buf));
-                }
-            }
-        }
-    }
-
-    fclose(f);
-    free(login);
-    free(logins);
-    free(message);
-    pthread_exit(NULL);
-}*/
 
 const char* get_filename_ext(const char *file)
 {
@@ -678,97 +509,6 @@ void raytrace_callback()
 	display_image(rp.img);
 	free(rp.img);
     }
-    /*else
-    {
-	nb_frames = fps * seconds;
-	animation_frames = malloc(sizeof(struct image) * nb_frames);
-	char* port = "4242";
-	struct addrinfo hints, *res;
-	
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	
-	int addr = getaddrinfo(NULL, port, &hints, &res);
-	
-	if (addr != 0)
-	{
-	    perror("getaddrinfo");
-	    exit(EXIT_FAILURE);
-	}
-	
-	int sock = -1;
-	
-	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	
-	if (sock == -1)
-	{
-	    perror("socket");
-	    exit(EXIT_FAILURE);
-	}
-	
-	int yes = 1;
-	
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-	
-	int binding = bind(sock, res->ai_addr, res->ai_addrlen);
-	
-	if (binding == -1)
-	{
-	    perror("bind");
-	    close(sock);
-	    exit(EXIT_FAILURE);
-	}
-	
-	int listening = listen(sock, 5);
-
-	if (listening == -1)
-	{
-	    perror("listen");
-	    exit(EXIT_FAILURE);
-	}
-	
-	struct net *data = malloc(sizeof(struct net));
-	
-	data->socket = sock;
-	data->go = 0;
-	data->nb_socket = 0;
-	
-	pthread_t receive_from_client_thread;
-	pthread_t receive_connection_from_client_thread;
-	
-	if (pthread_create(&receive_connection_from_client_thread, NULL,
-			   receive_connection_from_client, (void *)data))
-	{
-        fprintf(stderr,
-		"Error while creating thread receive_connection_from_client\n");
-        return 1;
-	}
-	
-	
-	if (pthread_create(&receive_from_client_thread, NULL, receive_from_client,
-			   (void *)data))
-	{
-	    fprintf(stderr, "Error while creating thread receive_from_client\n");
-	    return 1;
-	}
-	
-	if (pthread_join(receive_connection_from_client_thread, NULL))
-	{
-	    fprintf(stderr,
-		    "Error joining thread receive_connection_from_client\n");
-	    return 2;
-	}
-	
-	if (pthread_join(receive_from_client_thread, NULL))
-	{
-	    fprintf(stderr, "Error joining thread receive_from_client\n");
-	    return 2;
-	}
-	
-	close (sock);
-	}*/
     else
     {
 	nb_frames = fps * seconds;
